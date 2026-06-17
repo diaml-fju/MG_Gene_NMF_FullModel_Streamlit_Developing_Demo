@@ -11,7 +11,11 @@ import altair as alt
 import numpy as np
 import pandas as pd
 import streamlit as st
+import sys
+import streamlit as st
 
+print("Python version:", sys.version)
+print("Streamlit version:", st.__version__)
 
 APP_DIR = Path(__file__).resolve().parent
 PICKLE_DIR = APP_DIR / "pickle_File"
