@@ -560,7 +560,21 @@ def render_prediction_summary(prediction_result: dict[str, Any] | None, predicti
         st.info("Fill the values in the sidebar, then press Run prediction.")
         return
 
-    st.metric("Prediction", prediction_result["label"])
+    prediction_col, probability_col, threshold_col = st.columns(3)
+    prediction_col.metric("Prediction", prediction_result["label"])
+
+    probability = prediction_result.get("probability")
+    if probability is None:
+        probability_col.metric("Improve probability", "N/A")
+    else:
+        probability_col.metric("Improve probability", f"{float(probability):.4%}")
+
+    threshold = prediction_result.get("threshold")
+    if threshold is None:
+        threshold_col.metric("Threshold", "N/A")
+    else:
+        threshold_col.metric("Threshold", f"{float(threshold):.4%}")
+
     if prediction_result.get("forced_no_input"):
         st.warning("No input values were provided, so this case is forced to Non-Improve (Negative).")
     elif int(prediction_result["prediction"]) == 1:
