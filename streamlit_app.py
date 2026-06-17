@@ -685,7 +685,7 @@ def render_family_clr_change_section(
     st.altair_chart(family_zero_rule + family_bars, use_container_width=True)
     table = family_chart_data.drop(columns=["Direction", "family_order", "Zero"])
     if show_table_expander:
-        with st.expander("Show change table", expanded=False):
+        with st.expander("Show Difference Table", expanded=False):
             st.dataframe(table, use_container_width=True, hide_index=True)
     else:
         st.dataframe(table, use_container_width=True, hide_index=True)
@@ -802,7 +802,7 @@ def render_ft_change_section(
     st.altair_chart(zero_rule + bars, use_container_width=True)
     table = ft_change_table
     if show_table_expander:
-        with st.expander("Show FT change table", expanded=False):
+        with st.expander("Show FT Difference table", expanded=False):
             st.dataframe(table, use_container_width=True, hide_index=True)
     else:
         st.dataframe(table, use_container_width=True, hide_index=True)
