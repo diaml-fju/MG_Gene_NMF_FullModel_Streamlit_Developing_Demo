@@ -1,8 +1,6 @@
 from __future__ import annotations
 
 import pickle
-import sys
-import types
 import warnings
 from pathlib import Path
 from typing import Any
@@ -11,11 +9,6 @@ import altair as alt
 import numpy as np
 import pandas as pd
 import streamlit as st
-import sys
-import streamlit as st
-
-print("Python version:", sys.version)
-print("Streamlit version:", st.__version__)
 
 APP_DIR = Path(__file__).resolve().parent
 PICKLE_DIR = APP_DIR / "pickle_File"
@@ -89,40 +82,8 @@ def resolve_asset_path(filename: str) -> Path:
     return PICKLE_DIR / filename
 
 
-def install_legacy_pickle_compatibility() -> None:
-    """Allow old pandas/sklearn/xgboost pickle files to load in newer packages."""
-    import pandas.core.internals.blocks as blocks
-    import xgboost.compat as xgb_compat
-    from pandas._libs.internals import BlockPlacement
-    from sklearn.preprocessing import LabelEncoder
-
-    if not hasattr(xgb_compat, "XGBoostLabelEncoder"):
-        xgb_compat.XGBoostLabelEncoder = getattr(xgb_compat, "LabelEncoder", LabelEncoder)
-
-    if not hasattr(blocks, "_mg_gene_original_new_block"):
-        blocks._mg_gene_original_new_block = blocks.new_block
-
-        def patched_new_block(values: Any, placement: Any, *args: Any, **kwargs: Any):
-            if isinstance(placement, slice):
-                placement = BlockPlacement(placement)
-            if args and "ndim" not in kwargs:
-                kwargs["ndim"] = args[0]
-            return blocks._mg_gene_original_new_block(values, placement, **kwargs)
-
-        blocks.new_block = patched_new_block
-
-    if "pandas.core.indexes.numeric" not in sys.modules:
-        numeric_module = types.ModuleType("pandas.core.indexes.numeric")
-        numeric_module.Int64Index = pd.Index
-        numeric_module.UInt64Index = pd.Index
-        numeric_module.Float64Index = pd.Index
-        sys.modules["pandas.core.indexes.numeric"] = numeric_module
-
-
 @st.cache_resource(show_spinner="Loading model assets...")
 def load_model_assets() -> tuple[dict[str, Any], dict[str, pd.DataFrame], dict[str, dict[str, Any]]]:
-    install_legacy_pickle_compatibility()
-
     with warnings.catch_warnings():
         warnings.simplefilter("ignore")
         with open(resolve_asset_path("MG_Gene_NMF_Core.pkl"), "rb") as file:
