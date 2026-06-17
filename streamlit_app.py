@@ -755,11 +755,11 @@ def render_ft_change_section(
     *,
     show_table_expander: bool = True,
 ) -> None:
-    st.subheader("FT Change")
+    st.subheader("FT Difference")
     ft_change_table = build_ft_change_table(edited_input)
 
     if ft_change_table.empty:
-        st.info("No FT changes to plot yet.")
+        st.info("No FT differences to plot yet.")
         return
 
     chart_data = ft_change_table.copy()
