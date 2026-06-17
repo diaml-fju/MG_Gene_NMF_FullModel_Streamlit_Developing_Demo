@@ -633,7 +633,7 @@ def render_family_clr_change_section(
     *,
     show_table_expander: bool = True,
 ) -> None:
-    st.subheader("Change")
+    st.subheader("Difference")
     family_clr_table = build_asv_family_clr_change_table(
         edited_input,
         pseudo_count,
