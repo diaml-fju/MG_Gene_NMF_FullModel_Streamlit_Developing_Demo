@@ -808,7 +808,62 @@ def render_ft_change_section(
         st.dataframe(table, use_container_width=True, hide_index=True)
 
 
+def apply_readability_styles() -> None:
+    st.markdown(
+        """
+        <style>
+            html, body, [class*="css"] {
+                font-size: 17px;
+            }
+
+            .stApp, .stMarkdown, .stText, .stCaption, .stMetric,
+            .stSelectbox, .stButton, .stNumberInput, .stDataFrame,
+            label, input, textarea, button {
+                font-size: 1.03rem;
+            }
+
+            [data-testid="stSidebar"] {
+                font-size: 1.03rem;
+            }
+
+            [data-testid="stSidebar"] label,
+            [data-testid="stSidebar"] input,
+            [data-testid="stSidebar"] button,
+            [data-testid="stSidebar"] [role="combobox"] {
+                font-size: 1.02rem;
+            }
+
+            h1 {
+                font-size: 2.45rem;
+            }
+
+            h2 {
+                font-size: 1.75rem;
+            }
+
+            h3 {
+                font-size: 1.35rem;
+            }
+
+            [data-testid="stCaptionContainer"] {
+                font-size: 1rem;
+            }
+
+            [data-testid="stMetricValue"] {
+                font-size: 2rem;
+            }
+
+            [data-testid="stDataFrame"] {
+                font-size: 1rem;
+            }
+        </style>
+        """,
+        unsafe_allow_html=True,
+    )
+
+
 st.set_page_config(page_title="MG Gene NMF Prediction", page_icon="MG", layout="wide")
+apply_readability_styles()
 
 st.title("MG Gene NMF Single Case Prediction")
 st.caption("Fill in one subject's before / after values, then run the notebook NMF and XGBoost prediction pipeline.")
