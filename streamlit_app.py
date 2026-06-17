@@ -812,49 +812,72 @@ def apply_readability_styles() -> None:
     st.markdown(
         """
         <style>
-            html, body, [class*="css"] {
-                font-size: 17px;
+            html, body, .stApp {
+                font-size: 19px !important;
             }
 
-            .stApp, .stMarkdown, .stText, .stCaption, .stMetric,
-            .stSelectbox, .stButton, .stNumberInput, .stDataFrame,
-            label, input, textarea, button {
-                font-size: 1.03rem;
+            .stApp p,
+            .stApp span,
+            .stApp label,
+            .stApp button,
+            .stApp input,
+            .stApp textarea,
+            .stApp [role="button"],
+            .stApp [role="tab"],
+            .stApp [role="combobox"],
+            .stApp [data-baseweb="select"] *,
+            .stApp [data-baseweb="input"] *,
+            .stApp [data-testid="stMarkdownContainer"] *,
+            .stApp [data-testid="stCaptionContainer"],
+            .stApp [data-testid="stExpander"] *,
+            .stApp [data-testid="stNotificationContent"] * {
+                font-size: 1.08rem !important;
+                line-height: 1.45 !important;
             }
 
             [data-testid="stSidebar"] {
-                font-size: 1.03rem;
+                font-size: 1.08rem !important;
             }
 
             [data-testid="stSidebar"] label,
+            [data-testid="stSidebar"] p,
+            [data-testid="stSidebar"] span,
             [data-testid="stSidebar"] input,
             [data-testid="stSidebar"] button,
             [data-testid="stSidebar"] [role="combobox"] {
-                font-size: 1.02rem;
+                font-size: 1.06rem !important;
+                line-height: 1.4 !important;
             }
 
             h1 {
-                font-size: 2.45rem;
+                font-size: 2.75rem !important;
             }
 
             h2 {
-                font-size: 1.75rem;
+                font-size: 2rem !important;
             }
 
             h3 {
-                font-size: 1.35rem;
+                font-size: 1.55rem !important;
             }
 
             [data-testid="stCaptionContainer"] {
-                font-size: 1rem;
+                font-size: 1.05rem !important;
             }
 
             [data-testid="stMetricValue"] {
-                font-size: 2rem;
+                font-size: 2.25rem !important;
             }
 
-            [data-testid="stDataFrame"] {
-                font-size: 1rem;
+            [data-testid="stDataFrame"],
+            [data-testid="stDataFrame"] *,
+            .stDataFrame,
+            .stDataFrame * {
+                font-size: 1.05rem !important;
+            }
+
+            .vega-embed text {
+                font-size: 14px !important;
             }
         </style>
         """,
