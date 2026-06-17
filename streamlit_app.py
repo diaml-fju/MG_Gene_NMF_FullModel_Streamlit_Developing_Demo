@@ -77,14 +77,23 @@ FAMILY_PHYLUM_MAP = {
 }
 
 
+def resolve_asset_path(filename: str) -> Path:
+    for base_dir in (PICKLE_DIR, APP_DIR):
+        path = base_dir / filename
+        if path.exists():
+            return path
+    return PICKLE_DIR / filename
+
+
 def install_legacy_pickle_compatibility() -> None:
     """Allow old pandas/sklearn/xgboost pickle files to load in newer packages."""
     import pandas.core.internals.blocks as blocks
     import xgboost.compat as xgb_compat
     from pandas._libs.internals import BlockPlacement
+    from sklearn.preprocessing import LabelEncoder
 
     if not hasattr(xgb_compat, "XGBoostLabelEncoder"):
-        xgb_compat.XGBoostLabelEncoder = xgb_compat.LabelEncoder
+        xgb_compat.XGBoostLabelEncoder = getattr(xgb_compat, "LabelEncoder", LabelEncoder)
 
     if not hasattr(blocks, "_mg_gene_original_new_block"):
         blocks._mg_gene_original_new_block = blocks.new_block
@@ -112,13 +121,13 @@ def load_model_assets() -> tuple[dict[str, Any], dict[str, pd.DataFrame], dict[s
 
     with warnings.catch_warnings():
         warnings.simplefilter("ignore")
-        with open(PICKLE_DIR / "MG_Gene_NMF_Core.pkl", "rb") as file:
+        with open(resolve_asset_path("MG_Gene_NMF_Core.pkl"), "rb") as file:
             core_elements = pickle.load(file)
-        with open(PICKLE_DIR / "MG_Gene_NMF_Reference.pkl", "rb") as file:
+        with open(resolve_asset_path("MG_Gene_NMF_Reference.pkl"), "rb") as file:
             reference_data = pickle.load(file)
-        with open(PICKLE_DIR / "MG_Gene_NMF_Example_Positive_Cases.pkl", "rb") as file:
+        with open(resolve_asset_path("MG_Gene_NMF_Example_Positive_Cases.pkl"), "rb") as file:
             demo_positive = pickle.load(file)
-        with open(PICKLE_DIR / "MG_Gene_NMF_Example_Negative_Cases.pkl", "rb") as file:
+        with open(resolve_asset_path("MG_Gene_NMF_Example_Negative_Cases.pkl"), "rb") as file:
             demo_negative = pickle.load(file)
 
     nmf_model = core_elements["NMF"]
