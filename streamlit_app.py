@@ -12,7 +12,7 @@ import streamlit as st
 
 APP_DIR = Path(__file__).resolve().parent
 PICKLE_DIR = APP_DIR / "pickle_File"
-ASV_FAMILY_FILE =  "ASV_Family_name.csv"
+ASV_FAMILY_FILE = APP_DIR / "ASV_Family_name.csv"
 USER_GUIDE_PDF = APP_DIR / "User guide for GutMGS Final.pdf"
 SHIFT_VALUE = 14
 MANUAL_CASE_LABEL = "Manual input"
