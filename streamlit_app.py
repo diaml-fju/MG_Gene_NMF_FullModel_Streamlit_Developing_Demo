@@ -996,7 +996,7 @@ def apply_readability_styles() -> None:
 st.set_page_config(page_title="MG Gene NMF Prediction", page_icon="MG", layout="wide")
 apply_readability_styles()
 
-st.title("Analysis the association based on NLFXR")
+st.title("Association analysis  based on NLFXR")
 st.caption("Fill in one subject's before / after values, then run the notebook NMF and XGBoost prediction pipeline.")
 
 core, reference, demo_cases = load_model_assets()
@@ -1182,17 +1182,18 @@ if has_prediction_output:
     st.subheader("Prediction of Outcomes")
     render_prediction_summary(prediction_result, prediction_error)
     st.divider()
+
+    if prediction_error is None:
+        asv_summary_tab, ft_summary_tab = st.tabs(["ASV Summary", "Metabolites Summary"])
+
+        with asv_summary_tab:
+            render_family_clr_values_section(edited_table, float(core["ImputeValue"]), show_table_expander=True)
+            st.divider()
+            render_family_clr_change_section(edited_table, float(core["ImputeValue"]), show_table_expander=True)
+
+        with ft_summary_tab:
+            render_ft_values_section(edited_table, show_table_expander=True)
+            st.divider()
+            render_ft_change_section(edited_table, show_table_expander=True)
 else:
-    st.caption("Charts update from the current input and do not require running prediction first.")
-
-asv_summary_tab, ft_summary_tab = st.tabs(["ASV Summary", "Metabolites Summary"])
-
-with asv_summary_tab:
-    render_family_clr_values_section(edited_table, float(core["ImputeValue"]), show_table_expander=True)
-    st.divider()
-    render_family_clr_change_section(edited_table, float(core["ImputeValue"]), show_table_expander=True)
-
-with ft_summary_tab:
-    render_ft_values_section(edited_table, show_table_expander=True)
-    st.divider()
-    render_ft_change_section(edited_table, show_table_expander=True)
+    st.caption("Press Analysis to view prediction results and charts.")
