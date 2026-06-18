@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import pickle
 import warnings
+from html import escape
 from pathlib import Path
 from typing import Any
 
@@ -225,16 +226,20 @@ def case_dict_to_table(
 ) -> pd.DataFrame:
     asv_features = set(reference_data["ASV_Before_Ref"].columns)
     rows = []
+    asv_sequence = 0
 
     for feature in selected_features:
         values = case.get(feature, {})
         feature_type = "ASV" if feature in asv_features else "FT"
+        if feature_type == "ASV":
+            asv_sequence += 1
         family = asv_family_map.get(feature, "Unmapped family") if feature_type == "ASV" else "FT features"
         rows.append(
             {
                 "feature": feature,
                 "type": feature_type,
                 "family": family,
+                "asv_sequence": asv_sequence if feature_type == "ASV" else None,
                 "family_order": asv_family_order.get(family, 9999) if feature_type == "ASV" else 10000,
                 "display_name": FT_NAME_MAP.get(feature, "") if feature_type == "FT" else "",
                 "before": float(values.get("before", 0) or 0),
@@ -243,6 +248,14 @@ def case_dict_to_table(
         )
 
     return pd.DataFrame(rows)
+
+
+def sidebar_feature_caption(row: Any) -> str:
+    if row.type == "ASV":
+        return f"<em>{escape(str(row.family))}</em> (ASV = {int(row.asv_sequence)})"
+    if row.type == "FT" and row.display_name:
+        return f"<em>{escape(str(row.display_name))}</em> ({escape(str(row.feature))})"
+    return escape(str(row.feature))
 
 
 def table_to_case(input_table: pd.DataFrame) -> dict[str, dict[str, float]]:
@@ -312,10 +325,10 @@ def collect_sidebar_case(input_table: pd.DataFrame, selected_case: str, on_value
 
         with st.sidebar.expander(label, expanded=False):
             for row in group_table.itertuples(index=False):
-                caption = str(row.feature)
-                if row.type == "FT" and row.display_name:
-                    caption = f"{row.feature} - {row.display_name}"
-                st.caption(caption)
+                st.markdown(
+                    f'<div class="sidebar-feature-caption">{sidebar_feature_caption(row)}</div>',
+                    unsafe_allow_html=True,
+                )
                 before_col, after_col = st.columns(2)
                 before_value = before_col.number_input(
                     "Before",
@@ -340,6 +353,7 @@ def collect_sidebar_case(input_table: pd.DataFrame, selected_case: str, on_value
                         "feature": row.feature,
                         "type": row.type,
                         "family": row.family,
+                        "asv_sequence": row.asv_sequence,
                         "family_order": row.family_order,
                         "display_name": row.display_name,
                         "before": before_value,
@@ -883,6 +897,40 @@ def apply_readability_styles() -> None:
                 font-size: 2.25rem !important;
             }
 
+            .sidebar-app-title {
+                font-size: 1.18rem !important;
+                font-weight: 750;
+                line-height: 1.24 !important;
+                margin: 0.1rem 0 0.75rem;
+            }
+
+            .sidebar-author {
+                color: rgba(49, 51, 63, 0.78);
+                font-size: 0.86rem !important;
+                line-height: 1.35 !important;
+                margin-bottom: 1.15rem;
+            }
+
+            .sidebar-select-label {
+                font-size: 0.9rem !important;
+                font-weight: 750;
+                letter-spacing: 0.04em;
+                margin-bottom: 0.2rem;
+            }
+
+            .sidebar-input-note {
+                color: rgba(49, 51, 63, 0.78);
+                font-size: 0.86rem !important;
+                line-height: 1.38 !important;
+                margin: 0.65rem 0 0.9rem;
+            }
+
+            .sidebar-feature-caption {
+                font-size: 0.94rem !important;
+                line-height: 1.28 !important;
+                margin: 0.15rem 0 -0.35rem;
+            }
+
             [data-testid="stDataFrame"],
             [data-testid="stDataFrame"] *,
             .stDataFrame,
@@ -971,16 +1019,40 @@ if st.session_state.pop("force_manual_case_selector", False):
     load_case_widget_values(MANUAL_CASE_LABEL, st.session_state["manual_case_data"])
 
 with st.sidebar:
-    st.header("Case setup")
+    st.markdown(
+        """
+        <div class="sidebar-app-title">
+            Longitudinal Gut Microbiome<br>
+            Metabolome Explorer for Myasthenia Gravis<br>
+            (GutLogMG)
+        </div>
+        <div class="sidebar-author">
+            Author: Che-Cheng Chang, Kuan-Yu Lin, Chien Ju Lin,
+            Jiann-Horng Yeh, Hou-Chang Chiu, Tzu Chi Liu and Chi-Jie Lu
+        </div>
+        """,
+        unsafe_allow_html=True,
+    )
+    st.markdown('<div class="sidebar-select-label">SELECT</div>', unsafe_allow_html=True)
     default_case_index = case_options.index(default_case_label)
     selected_case = st.selectbox(
-        "Select a case",
+        "SELECT",
         case_options,
         index=default_case_index,
         key="case_selector",
         on_change=handle_case_selector_change,
+        label_visibility="collapsed",
     )
-    st.metric("Input features", len(selected_features))
+    st.markdown(
+        """
+        <div class="sidebar-input-note">
+            Please input your data as follows:<br>
+            (1) Sample sequence numbers (unit: number) in the ASV table corresponding to the ASV-ID<br>
+            (2) Peak values (unit: E-08) in the MSMSID table corresponding to HMDB-ID
+        </div>
+        """,
+        unsafe_allow_html=True,
+    )
 
 initial_case = case_for_label(selected_case)
 
