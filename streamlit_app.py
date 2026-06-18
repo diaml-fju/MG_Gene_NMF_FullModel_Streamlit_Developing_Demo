@@ -306,7 +306,7 @@ def build_feature_groups(input_table: pd.DataFrame) -> dict[str, pd.DataFrame]:
 
     ft_table = input_table[input_table["type"] != "ASV"]
     if not ft_table.empty:
-        groups["FT features"] = ft_table
+        groups["Metabolite features with (TCMs): HBMD-ID"] = ft_table
 
     return groups
 
@@ -755,12 +755,12 @@ def render_ft_values_section(
     *,
     show_table_expander: bool = True,
 ) -> None:
-    st.subheader("FT Values")
-    st.caption("The five selected TCM/FT features are shown separately from ASV families.")
+    st.subheader("Metabolite Values")
+    st.caption("The five selected Metabolite features are shown separately from ASV families.")
     ft_total_table = build_ft_total_table(edited_input)
 
     if ft_total_table.empty:
-        st.info("No FT values to plot yet.")
+        st.info("No Metabolite values to plot yet.")
         return
 
     ft_long = ft_total_table.melt(
@@ -803,7 +803,7 @@ def render_ft_values_section(
 
     st.altair_chart(ft_chart, use_container_width=True)
     if show_table_expander:
-        with st.expander("Show FT values table", expanded=False):
+        with st.expander("Show Metabolite values table", expanded=False):
             st.dataframe(ft_total_table, use_container_width=True, hide_index=True)
     else:
         st.dataframe(ft_total_table, use_container_width=True, hide_index=True)
@@ -814,11 +814,11 @@ def render_ft_change_section(
     *,
     show_table_expander: bool = True,
 ) -> None:
-    st.subheader("FT Difference")
+    st.subheader("Metabolite Difference")
     ft_change_table = build_ft_change_table(edited_input)
 
     if ft_change_table.empty:
-        st.info("No FT differences to plot yet.")
+        st.info("No Metabolite differences to plot yet.")
         return
 
     chart_data = ft_change_table.copy()
