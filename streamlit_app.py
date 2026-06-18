@@ -323,7 +323,7 @@ def build_feature_groups(input_table: pd.DataFrame) -> dict[str, pd.DataFrame]:
 
     ft_table = input_table[input_table["type"] != "ASV"]
     if not ft_table.empty:
-        groups["Metabolite features with (TCMs): HBMD-ID"] = ft_table
+        groups["Metabolite features with (TCMs): HMDB-ID"] = ft_table
 
     return groups
 
