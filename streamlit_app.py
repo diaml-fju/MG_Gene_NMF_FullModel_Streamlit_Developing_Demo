@@ -558,7 +558,11 @@ def predict_case(
         "probability": probability,
         "threshold": threshold,
         "prediction": prediction,
-        "label": "Improve (Positive)" if prediction == 1 else "Non-Improve (Negative)",
+        "label": (
+            "Possible improvement of MG symptoms"
+            if prediction == 1
+            else "Possible non-improvement of MG symptoms"
+        ),
         "processed_features": x_new,
         "reconstructed_features": new_x_recon,
         "nmf_components": w_new_final,
@@ -618,27 +622,7 @@ def render_prediction_summary(prediction_result: dict[str, Any] | None, predicti
         st.info("Fill the values in the sidebar, then press Run prediction.")
         return
 
-    prediction_col, probability_col, threshold_col = st.columns(3)
-    prediction_col.metric("Prediction", prediction_result["label"])
-
-    probability = prediction_result.get("probability")
-    if probability is None:
-        probability_col.metric("Improve probability", "N/A")
-    else:
-        probability_col.metric("Improve probability", f"{float(probability):.4%}")
-
-    threshold = prediction_result.get("threshold")
-    if threshold is None:
-        threshold_col.metric("Threshold", "N/A")
-    else:
-        threshold_col.metric("Threshold", f"{float(threshold):.4%}")
-
-    if prediction_result.get("forced_no_input"):
-        st.warning("No input values were provided, so this case is forced to Non-Improve (Negative).")
-    elif int(prediction_result["prediction"]) == 1:
-        st.success("This case is predicted as Improve (Positive).")
-    else:
-        st.warning("This case is predicted as Non-Improve (Negative).")
+    st.metric("Prediction", prediction_result["label"])
 
 
 def render_family_clr_values_section(
@@ -1131,7 +1115,7 @@ if predict_clicked:
         prediction_result = {
             "probability": None,
             "prediction": 0,
-            "label": "Non-Improve (Negative)",
+            "label": "Possible non-improvement of MG symptoms",
             "forced_no_input": True,
         }
         prediction_error = None
@@ -1156,7 +1140,7 @@ render_user_guide_download()
 
 if has_prediction_output:
     st.divider()
-    st.subheader("Prediction result")
+    st.subheader("Prediction of Outcomes")
     render_prediction_summary(prediction_result, prediction_error)
     st.divider()
 else:
