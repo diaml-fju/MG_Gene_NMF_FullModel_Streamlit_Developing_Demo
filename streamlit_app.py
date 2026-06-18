@@ -421,7 +421,7 @@ def format_family_with_count(family: str, count: int | float) -> str:
 
 
 def format_family_with_count_markdown(family: str, count: int | float) -> str:
-    return f"*{clean_family_name(family)}* (N={int(count)})"
+    return f"*{clean_family_name(family)}* ({int(count)} ASV)"
 
 
 def build_asv_family_clr_change_table(
