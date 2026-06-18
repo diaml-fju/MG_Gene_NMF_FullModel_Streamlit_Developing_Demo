@@ -616,8 +616,8 @@ def render_family_clr_values_section(
     *,
     show_table_expander: bool = True,
 ) -> None:
-    st.subheader("ASV Family Values")
-    st.caption("Family ASV values are summed first, then Before and After are CLR-transformed separately.")
+    st.subheader("Family level")
+    st.caption("Sum of family-level relative abundance changes")
     family_clr_value_table = build_asv_family_clr_value_table(edited_input, pseudo_count)
 
     if family_clr_value_table.empty:
@@ -960,7 +960,7 @@ def apply_readability_styles() -> None:
 st.set_page_config(page_title="MG Gene NMF Prediction", page_icon="MG", layout="wide")
 apply_readability_styles()
 
-st.title("MG Gene NMF Single Case Prediction")
+st.title("Analysis the association based on NLFXR")
 st.caption("Fill in one subject's before / after values, then run the notebook NMF and XGBoost prediction pipeline.")
 
 core, reference, demo_cases = load_model_assets()
@@ -1130,7 +1130,7 @@ if has_prediction_output:
 else:
     st.caption("Charts update from the current input and do not require running prediction first.")
 
-asv_summary_tab, ft_summary_tab = st.tabs(["ASV Summary", "FT Summary"])
+asv_summary_tab, ft_summary_tab = st.tabs(["ASV Summary", "Metabolites Summary"])
 
 with asv_summary_tab:
     render_family_clr_values_section(edited_table, float(core["ImputeValue"]), show_table_expander=True)
