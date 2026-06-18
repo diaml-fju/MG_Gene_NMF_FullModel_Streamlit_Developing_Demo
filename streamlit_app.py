@@ -296,7 +296,7 @@ def build_feature_groups(input_table: pd.DataFrame) -> dict[str, pd.DataFrame]:
     asv_table = input_table[input_table["type"] == "ASV"].sort_values(["family_order", "feature"])
     for family, family_table in asv_table.groupby("family", sort=False):
         display_family = format_family_with_count_markdown(str(family), len(family_table))
-        groups[f"ASV - {display_family}"] = family_table
+        groups[display_family] = family_table
 
     ft_table = input_table[input_table["type"] != "ASV"]
     if not ft_table.empty:
@@ -310,17 +310,15 @@ def collect_sidebar_case(input_table: pd.DataFrame, selected_case: str, on_value
     feature_groups = build_feature_groups(input_table)
 
     for group_name, group_table in feature_groups.items():
+        is_asv_group = bool(group_table["type"].eq("ASV").all())
         non_zero_count = int(((group_table["before"] != 0) | (group_table["after"] != 0)).sum())
-        if group_name.startswith("ASV - "):
+        if is_asv_group:
             label = group_name
         else:
             label = f"{group_name} ({len(group_table)} features"
-        if non_zero_count:
-            if group_name.startswith("ASV - "):
-                label += f" ({non_zero_count} filled)"
-            else:
-                label += f", {non_zero_count} filled"
-        if not group_name.startswith("ASV - "):
+        if non_zero_count and not is_asv_group:
+            label += f", {non_zero_count} filled"
+        if not is_asv_group:
             label += ")"
 
         with st.sidebar.expander(label, expanded=False):
@@ -412,7 +410,7 @@ def format_family_with_count(family: str, count: int | float) -> str:
 
 
 def format_family_with_count_markdown(family: str, count: int | float) -> str:
-    return f"*{clean_family_name(family)}* (n={int(count)})"
+    return f"*{clean_family_name(family)}* (N={int(count)})"
 
 
 def build_asv_family_clr_change_table(
@@ -902,7 +900,6 @@ def apply_readability_styles() -> None:
             }
 
             .sidebar-app-title {
-                color: #1f2937 !important;
                 font-size: 1.18rem !important;
                 font-weight: 750;
                 line-height: 1.24 !important;
