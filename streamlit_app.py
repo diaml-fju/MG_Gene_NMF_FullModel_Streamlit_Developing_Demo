@@ -1145,7 +1145,7 @@ with st.sidebar:
     st.divider()
     st.info(f"{non_zero_count} features currently have non-zero before/after values.")
     render_sidebar_about_tool()
-    predict_clicked = st.button("Analyze", type="primary", use_container_width=True)
+    predict_clicked = st.button("Analysis", type="primary", use_container_width=True)
 
 prediction_result = None
 prediction_error = None
