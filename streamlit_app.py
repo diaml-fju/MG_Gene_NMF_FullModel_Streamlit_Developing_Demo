@@ -2,7 +2,6 @@ from __future__ import annotations
 
 import pickle
 import warnings
-from html import escape
 from pathlib import Path
 from typing import Any
 
@@ -107,8 +106,8 @@ def load_model_assets() -> tuple[dict[str, Any], dict[str, pd.DataFrame], dict[s
         xgb_model.missing = np.nan
 
     demo_cases = {
-        **{f"Positive - {name}": case for name, case in demo_positive.items()},
-        **{f"Negative - {name}": case for name, case in demo_negative.items()},
+        **{f"Demo-Improver-Case {index}": case for index, case in enumerate(demo_positive.values(), start=1)},
+        **{f"Demo-Non-Improver-Case {index}": case for index, case in enumerate(demo_negative.values(), start=1)},
     }
     return core_elements, reference_data, demo_cases
 
@@ -251,11 +250,9 @@ def case_dict_to_table(
 
 
 def sidebar_feature_caption(row: Any) -> str:
-    if row.type == "ASV":
-        return f"<em>{escape(str(row.family))}</em> (ASV = {int(row.asv_sequence)})"
     if row.type == "FT" and row.display_name:
-        return f"<em>{escape(str(row.display_name))}</em> ({escape(str(row.feature))})"
-    return escape(str(row.feature))
+        return f"{row.feature} - {row.display_name}"
+    return str(row.feature)
 
 
 def table_to_case(input_table: pd.DataFrame) -> dict[str, dict[str, float]]:
@@ -323,10 +320,7 @@ def collect_sidebar_case(input_table: pd.DataFrame, selected_case: str, on_value
 
         with st.sidebar.expander(label, expanded=False):
             for row in group_table.itertuples(index=False):
-                st.markdown(
-                    f'<div class="sidebar-feature-caption">{sidebar_feature_caption(row)}</div>',
-                    unsafe_allow_html=True,
-                )
+                st.caption(sidebar_feature_caption(row))
                 before_col, after_col = st.columns(2)
                 before_value = before_col.number_input(
                     "Before",
@@ -936,17 +930,6 @@ def apply_readability_styles() -> None:
                 margin: 0.65rem 0 0.9rem;
             }
 
-            .sidebar-feature-caption {
-                color: #303846 !important;
-                font-size: 0.94rem !important;
-                line-height: 1.28 !important;
-                margin: 0.15rem 0 -0.35rem;
-            }
-
-            .sidebar-feature-caption em {
-                font-style: italic !important;
-            }
-
             [data-testid="stDataFrame"],
             [data-testid="stDataFrame"] *,
             .stDataFrame,
@@ -973,7 +956,7 @@ core, reference, demo_cases = load_model_assets()
 selected_features = list(core["Sel_Feature_list"])
 asv_family_map, asv_family_order = load_asv_family_info()
 case_options = [MANUAL_CASE_LABEL, *demo_cases.keys()]
-default_case_label = "Positive - Demo_Pos_Case1" if "Positive - Demo_Pos_Case1" in case_options else case_options[0]
+default_case_label = "Demo-Improver-Case 1" if "Demo-Improver-Case 1" in case_options else case_options[0]
 
 
 def case_for_label(case_label: str) -> dict[str, dict[str, float]]:
@@ -1054,6 +1037,9 @@ with st.sidebar:
     )
     st.markdown('<div class="sidebar-select-label">SELECT</div>', unsafe_allow_html=True)
     active_case_label = st.session_state.get("active_case_label", default_case_label)
+    if active_case_label not in case_options:
+        active_case_label = default_case_label
+        st.session_state["active_case_label"] = active_case_label
     default_case_index = case_options.index(active_case_label)
     selected_case = st.selectbox(
         "SELECT",
