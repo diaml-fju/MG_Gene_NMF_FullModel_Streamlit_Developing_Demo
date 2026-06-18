@@ -295,7 +295,7 @@ def build_feature_groups(input_table: pd.DataFrame) -> dict[str, pd.DataFrame]:
 
     asv_table = input_table[input_table["type"] == "ASV"].sort_values(["family_order", "feature"])
     for family, family_table in asv_table.groupby("family", sort=False):
-        display_family = format_family_with_count(str(family), len(family_table))
+        display_family = format_family_with_count_markdown(str(family), len(family_table))
         groups[f"ASV - {display_family}"] = family_table
 
     ft_table = input_table[input_table["type"] != "ASV"]
@@ -409,6 +409,10 @@ def clean_family_name(family: str) -> str:
 
 def format_family_with_count(family: str, count: int | float) -> str:
     return f"{clean_family_name(family)} (n={int(count)})"
+
+
+def format_family_with_count_markdown(family: str, count: int | float) -> str:
+    return f"*{clean_family_name(family)}* (n={int(count)})"
 
 
 def build_asv_family_clr_change_table(
@@ -898,6 +902,7 @@ def apply_readability_styles() -> None:
             }
 
             .sidebar-app-title {
+                color: #1f2937 !important;
                 font-size: 1.18rem !important;
                 font-weight: 750;
                 line-height: 1.24 !important;
@@ -905,13 +910,22 @@ def apply_readability_styles() -> None:
             }
 
             .sidebar-author {
-                color: rgba(49, 51, 63, 0.78);
                 font-size: 0.86rem !important;
                 line-height: 1.35 !important;
                 margin-bottom: 1.15rem;
             }
 
+            .sidebar-author-label {
+                color: #2b6f73 !important;
+                font-weight: 750;
+            }
+
+            .sidebar-author-names {
+                color: #5f6673 !important;
+            }
+
             .sidebar-select-label {
+                color: #1f2937 !important;
                 font-size: 0.9rem !important;
                 font-weight: 750;
                 letter-spacing: 0.04em;
@@ -919,16 +933,21 @@ def apply_readability_styles() -> None:
             }
 
             .sidebar-input-note {
-                color: rgba(49, 51, 63, 0.78);
+                color: #5f6673 !important;
                 font-size: 0.86rem !important;
                 line-height: 1.38 !important;
                 margin: 0.65rem 0 0.9rem;
             }
 
             .sidebar-feature-caption {
+                color: #303846 !important;
                 font-size: 0.94rem !important;
                 line-height: 1.28 !important;
                 margin: 0.15rem 0 -0.35rem;
+            }
+
+            .sidebar-feature-caption em {
+                font-style: italic !important;
             }
 
             [data-testid="stDataFrame"],
@@ -1002,7 +1021,7 @@ def handle_input_value_change(source_case: str, feature: str, field: str) -> Non
     changed_key = input_widget_key(source_case, feature, field)
     manual_case[feature][field] = float(st.session_state.get(changed_key, 0) or 0)
     st.session_state["manual_case_data"] = manual_case
-    st.session_state["case_selector"] = MANUAL_CASE_LABEL
+    st.session_state["active_case_label"] = MANUAL_CASE_LABEL
     load_case_widget_values(MANUAL_CASE_LABEL, manual_case)
     clear_prediction_state()
 
@@ -1010,12 +1029,12 @@ def handle_input_value_change(source_case: str, feature: str, field: str) -> Non
 if "manual_case_data" not in st.session_state:
     st.session_state["manual_case_data"] = empty_case(selected_features)
 
-if "case_selector" not in st.session_state:
-    st.session_state["case_selector"] = default_case_label
+if "active_case_label" not in st.session_state:
+    st.session_state["active_case_label"] = default_case_label
     load_case_widget_values(default_case_label, case_for_label(default_case_label))
 
 if st.session_state.pop("force_manual_case_selector", False):
-    st.session_state["case_selector"] = MANUAL_CASE_LABEL
+    st.session_state["active_case_label"] = MANUAL_CASE_LABEL
     load_case_widget_values(MANUAL_CASE_LABEL, st.session_state["manual_case_data"])
 
 with st.sidebar:
@@ -1027,22 +1046,30 @@ with st.sidebar:
             (GutLogMG)
         </div>
         <div class="sidebar-author">
-            Author: Che-Cheng Chang, Kuan-Yu Lin, Chien Ju Lin,
-            Jiann-Horng Yeh, Hou-Chang Chiu, Tzu Chi Liu and Chi-Jie Lu
+            <span class="sidebar-author-label">Author:</span>
+            <span class="sidebar-author-names">
+                Che-Cheng Chang, Kuan-Yu Lin, Chien Ju Lin,
+                Jiann-Horng Yeh, Hou-Chang Chiu, Tzu Chi Liu and Chi-Jie Lu
+            </span>
         </div>
         """,
         unsafe_allow_html=True,
     )
     st.markdown('<div class="sidebar-select-label">SELECT</div>', unsafe_allow_html=True)
-    default_case_index = case_options.index(default_case_label)
+    active_case_label = st.session_state.get("active_case_label", default_case_label)
+    default_case_index = case_options.index(active_case_label)
     selected_case = st.selectbox(
         "SELECT",
         case_options,
         index=default_case_index,
-        key="case_selector",
-        on_change=handle_case_selector_change,
         label_visibility="collapsed",
     )
+    if selected_case != active_case_label:
+        st.session_state["active_case_label"] = selected_case
+        if selected_case == MANUAL_CASE_LABEL:
+            st.session_state.setdefault("manual_case_data", empty_case(selected_features))
+        load_case_widget_values(selected_case, case_for_label(selected_case))
+        clear_prediction_state()
     st.markdown(
         """
         <div class="sidebar-input-note">
