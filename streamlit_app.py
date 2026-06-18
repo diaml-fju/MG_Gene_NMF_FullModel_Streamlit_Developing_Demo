@@ -577,6 +577,37 @@ def render_user_guide_download() -> None:
         st.info("USER GUIDE PDF is not available yet.")
 
 
+def render_sidebar_about_tool() -> None:
+    st.markdown(
+        """
+        **About this tool:**
+
+        The features implemented in this calculator are derived from our study,
+        "Integrative non-negative matrix factorization and machine learning framework for
+        analyzing longitudinal microbiome-metabolome changes in myasthenia gravis." The
+        model is based on 127 TCASVs and 5 TCMs. Before using the tool, users must first
+        pre-process their raw data with the required external software and reference
+        databases. ASV data should be processed in QIIME 2, and metabolomic features should
+        be annotated against the Human Metabolome Database (HMDB). Once the data have been
+        transformed in this way, the corresponding values can be entered into the tool.
+
+        Based on these inputs, the tool returns:
+
+        1. Outcome prediction - the predicted clinical outcome, classified as improvement
+        or non-improvement.
+        2. Feature-level trends - the direction of change (increase or decrease) for each
+        input feature.
+
+        Required inputs:
+
+        1. ASV table (from QIIME 2) - including the ASV abundance table, taxonomic
+        assignments, and per-sample sequence counts.
+        2. Metabolite feature table (annotated against HMDB) - including the HMDB ID,
+        compound name, and peak intensity values.
+        """
+    )
+
+
 def render_prediction_summary(prediction_result: dict[str, Any] | None, prediction_error: Exception | None) -> None:
     if prediction_error is not None:
         st.error("Prediction failed. Please check the input values.")
@@ -1090,6 +1121,7 @@ non_zero_count = int(((edited_table["before"] != 0) | (edited_table["after"] != 
 with st.sidebar:
     st.divider()
     st.info(f"{non_zero_count} features currently have non-zero before/after values.")
+    render_sidebar_about_tool()
     predict_clicked = st.button("Run prediction", type="primary", use_container_width=True)
 
 prediction_result = None
