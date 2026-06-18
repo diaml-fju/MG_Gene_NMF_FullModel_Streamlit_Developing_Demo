@@ -622,7 +622,10 @@ def render_prediction_summary(prediction_result: dict[str, Any] | None, predicti
         st.info("Fill the values in the sidebar, then press Run prediction.")
         return
 
-    st.metric("Prediction", prediction_result["label"])
+    if int(prediction_result["prediction"]) == 1:
+        st.success(prediction_result["label"])
+    else:
+        st.warning(prediction_result["label"])
 
 
 def render_family_clr_values_section(
