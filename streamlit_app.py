@@ -16,6 +16,7 @@ ASV_FAMILY_FILE = APP_DIR / "ASV_Family_name.csv"
 USER_GUIDE_PDF = APP_DIR / "User guide for GutMGS Final.pdf"
 SHIFT_VALUE = 14
 MANUAL_CASE_LABEL = "Manual input"
+FT_INPUT_SCALE = 1e8
 FT_NAME_MAP = {
     "FT0047": "Racemethionine",
     "FT0270": "Ergocalciferol",
@@ -264,6 +265,22 @@ def sidebar_feature_caption(row: Any) -> str:
     return str(row.feature)
 
 
+def is_ft_feature(feature: str) -> bool:
+    return str(feature) in FT_NAME_MAP or str(feature).startswith("FT")
+
+
+def case_value_to_widget_value(feature: str, value: float) -> float:
+    if is_ft_feature(feature):
+        return float(value or 0) * FT_INPUT_SCALE
+    return float(value or 0)
+
+
+def widget_value_to_case_value(feature: str, value: float) -> float:
+    if is_ft_feature(feature):
+        return float(value or 0) / FT_INPUT_SCALE
+    return float(value or 0)
+
+
 def table_to_case(input_table: pd.DataFrame) -> dict[str, dict[str, float]]:
     case = {}
     for row in input_table.itertuples(index=False):
@@ -276,7 +293,7 @@ def table_to_case(input_table: pd.DataFrame) -> dict[str, dict[str, float]]:
 
 def input_widget_key(case_label: str, feature: str, field: str) -> str:
     safe_case_label = case_label.replace(" ", "_").replace("-", "_")
-    return f"case_input_{safe_case_label}_{feature}_{field}"
+    return f"case_input_e08_{safe_case_label}_{feature}_{field}"
 
 
 def empty_case(selected_features: list[str]) -> dict[str, dict[str, float]]:
@@ -333,11 +350,12 @@ def collect_sidebar_case(input_table: pd.DataFrame, selected_case: str, on_value
                 before_col, after_col = st.columns(2)
                 before_label = "Before (E-08)" if row.type == "FT" else "Before"
                 after_label = "After (E-08)" if row.type == "FT" else "After"
+                number_format = "%.0f" if row.type == "FT" else "%.8f"
                 before_value = before_col.number_input(
                     before_label,
                     min_value=0.0,
-                    value=float(row.before),
-                    format="%.8f",
+                    value=case_value_to_widget_value(row.feature, row.before),
+                    format=number_format,
                     key=input_widget_key(selected_case, row.feature, "before"),
                     on_change=on_value_change,
                     args=(selected_case, row.feature, "before") if on_value_change else None,
@@ -345,8 +363,8 @@ def collect_sidebar_case(input_table: pd.DataFrame, selected_case: str, on_value
                 after_value = after_col.number_input(
                     after_label,
                     min_value=0.0,
-                    value=float(row.after),
-                    format="%.8f",
+                    value=case_value_to_widget_value(row.feature, row.after),
+                    format=number_format,
                     key=input_widget_key(selected_case, row.feature, "after"),
                     on_change=on_value_change,
                     args=(selected_case, row.feature, "after") if on_value_change else None,
@@ -360,8 +378,8 @@ def collect_sidebar_case(input_table: pd.DataFrame, selected_case: str, on_value
                         "family_order": row.family_order,
                         "display_name": row.display_name,
                         "hmdb_id": row.hmdb_id,
-                        "before": before_value,
-                        "after": after_value,
+                        "before": widget_value_to_case_value(row.feature, before_value),
+                        "after": widget_value_to_case_value(row.feature, after_value),
                     }
                 )
 
@@ -997,8 +1015,14 @@ def case_for_label(case_label: str) -> dict[str, dict[str, float]]:
 def load_case_widget_values(case_label: str, case: dict[str, dict[str, float]]) -> None:
     for feature in selected_features:
         values = case.get(feature, {})
-        st.session_state[input_widget_key(case_label, feature, "before")] = float(values.get("before", 0) or 0)
-        st.session_state[input_widget_key(case_label, feature, "after")] = float(values.get("after", 0) or 0)
+        st.session_state[input_widget_key(case_label, feature, "before")] = case_value_to_widget_value(
+            feature,
+            values.get("before", 0),
+        )
+        st.session_state[input_widget_key(case_label, feature, "after")] = case_value_to_widget_value(
+            feature,
+            values.get("after", 0),
+        )
 
 
 def clear_prediction_state() -> None:
@@ -1023,12 +1047,24 @@ def handle_input_value_change(source_case: str, feature: str, field: str) -> Non
         before_key = input_widget_key(source_case, current_feature, "before")
         after_key = input_widget_key(source_case, current_feature, "after")
         manual_case[current_feature] = {
-            "before": float(st.session_state.get(before_key, baseline_values.get("before", 0)) or 0),
-            "after": float(st.session_state.get(after_key, baseline_values.get("after", 0)) or 0),
+            "before": widget_value_to_case_value(
+                current_feature,
+                st.session_state.get(
+                    before_key,
+                    case_value_to_widget_value(current_feature, baseline_values.get("before", 0)),
+                ),
+            ),
+            "after": widget_value_to_case_value(
+                current_feature,
+                st.session_state.get(
+                    after_key,
+                    case_value_to_widget_value(current_feature, baseline_values.get("after", 0)),
+                ),
+            ),
         }
 
     changed_key = input_widget_key(source_case, feature, field)
-    manual_case[feature][field] = float(st.session_state.get(changed_key, 0) or 0)
+    manual_case[feature][field] = widget_value_to_case_value(feature, st.session_state.get(changed_key, 0))
     st.session_state["manual_case_data"] = manual_case
     st.session_state["active_case_label"] = MANUAL_CASE_LABEL
     load_case_widget_values(MANUAL_CASE_LABEL, manual_case)
@@ -1109,7 +1145,7 @@ with st.sidebar:
     st.divider()
     st.info(f"{non_zero_count} features currently have non-zero before/after values.")
     render_sidebar_about_tool()
-    predict_clicked = st.button("Run prediction", type="primary", use_container_width=True)
+    predict_clicked = st.button("Analyze", type="primary", use_container_width=True)
 
 prediction_result = None
 prediction_error = None
