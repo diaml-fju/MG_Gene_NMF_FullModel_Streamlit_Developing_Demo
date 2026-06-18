@@ -23,6 +23,13 @@ FT_NAME_MAP = {
     "FT2032": "Deoxyuridine",
     "FT1558": "benzothiazole-2(3H)-thione",
 }
+FT_HMDB_MAP = {
+    "FT0047": "HMDB0033951",
+    "FT0270": "HMDB0000900",
+    "FT0131": "HMDB0001476",
+    "FT2032": "HMDB0000012",
+    "FT1558": "HMDB0030524",
+}
 PHYLUM_ORDER = [
     "Firmicutes",
     "Bacteroidota",
@@ -241,6 +248,7 @@ def case_dict_to_table(
                 "asv_sequence": asv_sequence if feature_type == "ASV" else None,
                 "family_order": asv_family_order.get(family, 9999) if feature_type == "ASV" else 10000,
                 "display_name": FT_NAME_MAP.get(feature, "") if feature_type == "FT" else "",
+                "hmdb_id": FT_HMDB_MAP.get(feature, "") if feature_type == "FT" else "",
                 "before": float(values.get("before", 0) or 0),
                 "after": float(values.get("after", 0) or 0),
             }
@@ -251,7 +259,8 @@ def case_dict_to_table(
 
 def sidebar_feature_caption(row: Any) -> str:
     if row.type == "FT" and row.display_name:
-        return f"{row.feature} - {row.display_name}"
+        feature_label = row.hmdb_id if row.hmdb_id else row.feature
+        return f"{feature_label} - {row.display_name}"
     return str(row.feature)
 
 
@@ -322,8 +331,10 @@ def collect_sidebar_case(input_table: pd.DataFrame, selected_case: str, on_value
             for row in group_table.itertuples(index=False):
                 st.caption(sidebar_feature_caption(row))
                 before_col, after_col = st.columns(2)
+                before_label = "Before (E-08)" if row.type == "FT" else "Before"
+                after_label = "After (E-08)" if row.type == "FT" else "After"
                 before_value = before_col.number_input(
-                    "Before",
+                    before_label,
                     min_value=0.0,
                     value=float(row.before),
                     format="%.8f",
@@ -332,7 +343,7 @@ def collect_sidebar_case(input_table: pd.DataFrame, selected_case: str, on_value
                     args=(selected_case, row.feature, "before") if on_value_change else None,
                 )
                 after_value = after_col.number_input(
-                    "After",
+                    after_label,
                     min_value=0.0,
                     value=float(row.after),
                     format="%.8f",
@@ -348,6 +359,7 @@ def collect_sidebar_case(input_table: pd.DataFrame, selected_case: str, on_value
                         "asv_sequence": row.asv_sequence,
                         "family_order": row.family_order,
                         "display_name": row.display_name,
+                        "hmdb_id": row.hmdb_id,
                         "before": before_value,
                         "after": after_value,
                     }
@@ -364,8 +376,12 @@ def build_input_change_table(input_table: pd.DataFrame, include_zero_features: b
     change_table = input_table.copy()
     change_table["label"] = change_table["feature"]
     ft_mask = (change_table["type"] == "FT") & (change_table["display_name"] != "")
+    change_table.loc[ft_mask, "feature_label"] = change_table.loc[ft_mask, "hmdb_id"].where(
+        change_table.loc[ft_mask, "hmdb_id"] != "",
+        change_table.loc[ft_mask, "feature"],
+    )
     change_table.loc[ft_mask, "label"] = (
-        change_table.loc[ft_mask, "feature"] + " - " + change_table.loc[ft_mask, "display_name"]
+        change_table.loc[ft_mask, "feature_label"] + " - " + change_table.loc[ft_mask, "display_name"]
     )
     change_table["delta"] = change_table["after"] - change_table["before"]
 
@@ -380,8 +396,9 @@ def build_ft_total_table(input_table: pd.DataFrame) -> pd.DataFrame:
     if ft_table.empty:
         return pd.DataFrame(columns=["Feature", "Compound", "Before", "After"])
 
+    ft_table["feature_label"] = np.where(ft_table["hmdb_id"] != "", ft_table["hmdb_id"], ft_table["feature"])
     ft_table["Compound"] = np.where(ft_table["display_name"] != "", ft_table["display_name"], ft_table["feature"])
-    return ft_table.rename(columns={"feature": "Feature", "before": "Before", "after": "After"})[
+    return ft_table.rename(columns={"feature_label": "Feature", "before": "Before", "after": "After"})[
         ["Feature", "Compound", "Before", "After"]
     ]
 
@@ -907,12 +924,7 @@ def apply_readability_styles() -> None:
             }
 
             .sidebar-author-label {
-                color: #2b6f73 !important;
                 font-weight: 750;
-            }
-
-            .sidebar-author-names {
-                color: #5f6673 !important;
             }
 
             .sidebar-select-label {
@@ -924,7 +936,6 @@ def apply_readability_styles() -> None:
             }
 
             .sidebar-input-note {
-                color: #5f6673 !important;
                 font-size: 0.86rem !important;
                 line-height: 1.38 !important;
                 margin: 0.65rem 0 0.9rem;
