@@ -424,9 +424,9 @@ def build_ft_total_table(input_table: pd.DataFrame) -> pd.DataFrame:
 def build_ft_change_table(input_table: pd.DataFrame) -> pd.DataFrame:
     ft_table = build_ft_total_table(input_table)
     if ft_table.empty:
-        return pd.DataFrame(columns=["Feature", "Compound", "Before", "After", "After - Before"])
+        return pd.DataFrame(columns=["Feature", "Compound", "Before", "After", "Delta abundance"])
 
-    ft_table["After - Before"] = ft_table["After"] - ft_table["Before"]
+    ft_table["Delta abundance"] = ft_table["After"] - ft_table["Before"]
     return ft_table
 
 
@@ -716,19 +716,19 @@ def render_family_raw_change_section(
         return
 
     family_chart_data = family_change_table.copy()
-    family_chart_data["After - Before"] = family_chart_data["After total"] - family_chart_data["Before total"]
-    family_chart_data["Direction"] = np.where(family_chart_data["After - Before"] >= 0, "Increase", "Decrease")
+    family_chart_data["Delta abundance"] = family_chart_data["After total"] - family_chart_data["Before total"]
+    family_chart_data["Direction"] = np.where(family_chart_data["Delta abundance"] >= 0, "Increase", "Decrease")
     family_chart_data["Zero"] = 0
     family_chart_height = max(320, min(900, len(family_chart_data) * 30))
-    max_abs_delta = float(family_chart_data["After - Before"].abs().max() or 1)
+    max_abs_delta = float(family_chart_data["Delta abundance"].abs().max() or 1)
 
     family_bars = (
         alt.Chart(family_chart_data)
         .mark_bar()
         .encode(
             x=alt.X(
-                "After - Before:Q",
-                title="After - Before",
+                "Delta abundance:Q",
+                title="Delta abundance",
                 axis=alt.Axis(grid=True),
                 scale=alt.Scale(domain=[-max_abs_delta, max_abs_delta]),
             ),
@@ -743,7 +743,7 @@ def render_family_raw_change_section(
                 scale=alt.Scale(domain=["Increase", "Decrease"], range=["#2f7d5c", "#b34d4d"]),
                 legend=None,
             ),
-            tooltip=["Family", "Before total", "After total", "After - Before"],
+            tooltip=["Family", "Before total", "After total", "Delta abundance"],
         )
         .properties(height=family_chart_height)
     )
@@ -836,12 +836,12 @@ def render_ft_change_section(
 
     chart_data = ft_change_table.copy()
     chart_data["Label"] = chart_data["Feature"] + " - " + chart_data["Compound"]
-    chart_data["Direction"] = np.where(chart_data["After - Before"] >= 0, "Increase", "Decrease")
+    chart_data["Direction"] = np.where(chart_data["Delta abundance"] >= 0, "Increase", "Decrease")
     chart_data["Feature order"] = chart_data["Feature"].map(
         {feature: order for order, feature in enumerate(ft_change_table["Feature"].tolist())}
     )
     chart_data["Zero"] = 0
-    max_abs_delta = float(chart_data["After - Before"].abs().max() or 1)
+    max_abs_delta = float(chart_data["Delta abundance"].abs().max() or 1)
     ft_change_height = max(260, len(chart_data) * 54)
 
     bars = (
@@ -849,8 +849,8 @@ def render_ft_change_section(
         .mark_bar()
         .encode(
             x=alt.X(
-                "After - Before:Q",
-                title="After - Before",
+                "Delta abundance:Q",
+                title="Delta abundance",
                 axis=alt.Axis(grid=True),
                 scale=alt.Scale(domain=[-max_abs_delta, max_abs_delta]),
             ),
@@ -865,7 +865,7 @@ def render_ft_change_section(
                 scale=alt.Scale(domain=["Increase", "Decrease"], range=["#2f7d5c", "#b34d4d"]),
                 legend=None,
             ),
-            tooltip=["Feature", "Compound", "Before", "After", "After - Before"],
+            tooltip=["Feature", "Compound", "Before", "After", "Delta abundance"],
         )
         .properties(height=ft_change_height)
     )
