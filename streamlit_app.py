@@ -652,7 +652,7 @@ def render_family_raw_values_section(
     show_table_expander: bool = True,
 ) -> None:
     st.subheader("Family level")
-    st.caption("Sum of family-level relative abundance changes")
+    st.caption("Sum of family-level ASV count changes")
     family_value_table = build_asv_family_total_table(edited_input)
 
     if family_value_table.empty:
@@ -663,7 +663,7 @@ def render_family_raw_values_section(
         id_vars=["Family", "family_order"],
         value_vars=["Before total", "After total"],
         var_name="Timepoint",
-        value_name="ASV count",
+        value_name="ASV Count",
     )
     family_value_long["Timepoint"] = family_value_long["Timepoint"].str.replace(" total", "", regex=False)
     family_value_long["Timepoint order"] = family_value_long["Timepoint"].map({"Before": 0, "After": 1})
@@ -673,7 +673,7 @@ def render_family_raw_values_section(
         alt.Chart(family_value_long)
         .mark_bar()
         .encode(
-            x=alt.X("Relative abundance:Q", title="Relative abundance"),
+            x=alt.X("ASV Count:Q", title="ASV Count"),
             y=alt.Y(
                 "Family:N",
                 title=None,
@@ -689,7 +689,7 @@ def render_family_raw_values_section(
                 scale=alt.Scale(domain=["Before", "After"], range=["#2f6fbb", "#c94c4c"]),
                 legend=alt.Legend(title=None),
             ),
-            tooltip=["Family", "Timepoint", "Relative abundance"],
+            tooltip=["Family", "Timepoint", "ASV Count"],
         )
         .properties(height=value_height)
     )
