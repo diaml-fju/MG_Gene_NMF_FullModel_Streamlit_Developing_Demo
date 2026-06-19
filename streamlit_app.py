@@ -663,7 +663,7 @@ def render_family_raw_values_section(
         id_vars=["Family", "family_order"],
         value_vars=["Before total", "After total"],
         var_name="Timepoint",
-        value_name="Relative abundance",
+        value_name="ASV count",
     )
     family_value_long["Timepoint"] = family_value_long["Timepoint"].str.replace(" total", "", regex=False)
     family_value_long["Timepoint order"] = family_value_long["Timepoint"].map({"Before": 0, "After": 1})
