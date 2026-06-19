@@ -646,35 +646,34 @@ def render_prediction_summary(prediction_result: dict[str, Any] | None, predicti
         st.warning(prediction_result["label"])
 
 
-def render_family_clr_values_section(
+def render_family_raw_values_section(
     edited_input: pd.DataFrame,
-    pseudo_count: float,
     *,
     show_table_expander: bool = True,
 ) -> None:
     st.subheader("Family level")
     st.caption("Sum of family-level relative abundance changes")
-    family_clr_value_table = build_asv_family_clr_value_table(edited_input, pseudo_count)
+    family_value_table = build_asv_family_total_table(edited_input)
 
-    if family_clr_value_table.empty:
-        st.info("No ASV family CLR values to plot yet.")
+    if family_value_table.empty:
+        st.info("No ASV family values to plot yet.")
         return
 
-    family_clr_value_long = family_clr_value_table.melt(
+    family_value_long = family_value_table.melt(
         id_vars=["Family", "family_order"],
-        value_vars=["Before CLR", "After CLR"],
+        value_vars=["Before total", "After total"],
         var_name="Timepoint",
-        value_name="CLR value",
+        value_name="Relative abundance",
     )
-    family_clr_value_long["Timepoint"] = family_clr_value_long["Timepoint"].str.replace(" CLR", "", regex=False)
-    family_clr_value_long["Timepoint order"] = family_clr_value_long["Timepoint"].map({"Before": 0, "After": 1})
-    clr_value_height = max(420, min(1000, len(family_clr_value_table) * 42))
+    family_value_long["Timepoint"] = family_value_long["Timepoint"].str.replace(" total", "", regex=False)
+    family_value_long["Timepoint order"] = family_value_long["Timepoint"].map({"Before": 0, "After": 1})
+    value_height = max(420, min(1000, len(family_value_table) * 42))
 
-    family_clr_value_chart = (
-        alt.Chart(family_clr_value_long)
+    family_value_chart = (
+        alt.Chart(family_value_long)
         .mark_bar()
         .encode(
-            x=alt.X("CLR value:Q", title="CLR value"),
+            x=alt.X("Relative abundance:Q", title="Relative abundance"),
             y=alt.Y(
                 "Family:N",
                 title=None,
@@ -690,13 +689,13 @@ def render_family_clr_values_section(
                 scale=alt.Scale(domain=["Before", "After"], range=["#2f6fbb", "#c94c4c"]),
                 legend=alt.Legend(title=None),
             ),
-            tooltip=["Family", "Timepoint", "CLR value"],
+            tooltip=["Family", "Timepoint", "Relative abundance"],
         )
-        .properties(height=clr_value_height)
+        .properties(height=value_height)
     )
 
-    st.altair_chart(family_clr_value_chart, use_container_width=True)
-    table = family_clr_value_table.drop(columns=["family_order"])
+    st.altair_chart(family_value_chart, use_container_width=True)
+    table = family_value_table.drop(columns=["family_order"])
     if show_table_expander:
         with st.expander("Show ASV family values table", expanded=False):
             st.dataframe(table, use_container_width=True, hide_index=True)
@@ -704,38 +703,34 @@ def render_family_clr_values_section(
         st.dataframe(table, use_container_width=True, hide_index=True)
 
 
-def render_family_clr_change_section(
+def render_family_raw_change_section(
     edited_input: pd.DataFrame,
-    pseudo_count: float,
     *,
     show_table_expander: bool = True,
 ) -> None:
     st.subheader("Difference")
-    family_clr_table = build_asv_family_clr_change_table(
-        edited_input,
-        pseudo_count,
-        include_zero_families=True,
-    )
+    family_change_table = build_asv_family_total_table(edited_input)
 
-    if family_clr_table.empty:
+    if family_change_table.empty:
         st.info("No ASV family values to plot yet.")
         return
 
-    family_chart_data = family_clr_table.copy()
-    family_chart_data["Direction"] = np.where(family_chart_data["CLR delta"] >= 0, "Increase", "Decrease")
+    family_chart_data = family_change_table.copy()
+    family_chart_data["After - Before"] = family_chart_data["After total"] - family_chart_data["Before total"]
+    family_chart_data["Direction"] = np.where(family_chart_data["After - Before"] >= 0, "Increase", "Decrease")
     family_chart_data["Zero"] = 0
     family_chart_height = max(320, min(900, len(family_chart_data) * 30))
-    max_abs_clr_delta = float(family_chart_data["CLR delta"].abs().max() or 1)
+    max_abs_delta = float(family_chart_data["After - Before"].abs().max() or 1)
 
     family_bars = (
         alt.Chart(family_chart_data)
         .mark_bar()
         .encode(
             x=alt.X(
-                "CLR delta:Q",
-                title="CLR(After) - CLR(Before)",
+                "After - Before:Q",
+                title="After - Before",
                 axis=alt.Axis(grid=True),
-                scale=alt.Scale(domain=[-max_abs_clr_delta, max_abs_clr_delta]),
+                scale=alt.Scale(domain=[-max_abs_delta, max_abs_delta]),
             ),
             y=alt.Y(
                 "Family:N",
@@ -748,7 +743,7 @@ def render_family_clr_change_section(
                 scale=alt.Scale(domain=["Increase", "Decrease"], range=["#2f7d5c", "#b34d4d"]),
                 legend=None,
             ),
-            tooltip=["Family", "Before total", "After total", "Before CLR", "After CLR", "CLR delta"],
+            tooltip=["Family", "Before total", "After total", "After - Before"],
         )
         .properties(height=family_chart_height)
     )
@@ -1187,9 +1182,9 @@ if has_prediction_output:
         asv_summary_tab, ft_summary_tab = st.tabs(["ASV Summary", "Metabolites Summary"])
 
         with asv_summary_tab:
-            render_family_clr_values_section(edited_table, float(core["ImputeValue"]), show_table_expander=True)
+            render_family_raw_values_section(edited_table, show_table_expander=True)
             st.divider()
-            render_family_clr_change_section(edited_table, float(core["ImputeValue"]), show_table_expander=True)
+            render_family_raw_change_section(edited_table, show_table_expander=True)
 
         with ft_summary_tab:
             render_ft_values_section(edited_table, show_table_expander=True)
